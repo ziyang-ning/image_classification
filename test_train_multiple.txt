@@ -1,0 +1,76 @@
+# training test multiple
+num_epoch = 3
+total_step = len(data_loader)
+stats = np.empty((0,3), float)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+
+def train_net():
+    dataset = datasets.ImageFolder("./seg_train/seg_train/",
+                               transform=transform)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=32, 
+                                          shuffle=True)
+    for epoch in tqdm(range(num_epoch)):  # loop over the dataset multiple times
+        running_loss = 0.0
+        running_correct = 0
+        for i, data in enumerate(data_loader, 0):
+            inputs, labels = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            # forward
+            optimizer.zero_grad()
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
+            preds = torch.argmax(outputs, dim=1)
+
+            # back prop
+            loss.backward()
+            optimizer.step()
+
+def test_net():
+    correct = 0
+    total = 0
+    all_preds = np.empty((0,32), int)
+    all_labels = np.empty((0,32), int)
+    
+    test_set = datasets.ImageFolder("./seg_test/seg_test/",
+                               transform=transform)
+    testloader = torch.utils.data.DataLoader(test_set, shuffle=True,batch_size=32)
+    with torch.no_grad():
+        for i, data in enumerate(testloader, 0):
+            test_images, test_labels = data
+            # move it to the GPU
+            test_images = test_images.to(device)
+            test_labels = test_labels.to(device)
+
+            # calculate outputs by running images through the network
+            outputs = net(test_images)
+            # the class with the highest energy is what we choose as prediction
+            preds = torch.argmax(outputs, dim=1)
+            total += test_labels.size(0)
+            correct += torch.sum(preds == test_labels)
+
+            all_preds = np.append(all_preds, preds.cpu().numpy())
+            all_labels = np.append(all_labels, test_labels.cpu().numpy())
+    print(f'Accuracy of the network on the 3k test images: {100 * correct // total} %')
+    return 100 * correct // total
+
+    
+VGG_accuracy = []
+zynet_accuracy = []
+
+for num_models in range(0,9):
+    print('\n model numer {} for VGG'.format(num_models))
+    net = VGG_Net()
+    net.to(device)
+    train_net()
+    VGG_accuracy += [test_net()]
+    
+    print('\n model numer {} for ZYANGNET'.format(num_models))
+    net = ZiyangNet()
+    net.to(device)
+    train_net()
+    zynet_accuracy += [test_net()]
+    print('\n')
+    

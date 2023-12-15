@@ -3,3 +3,6 @@
 /seg_test
 /seg_train
 ZiyangNet.pth
+ZiyangNet_662734653684000_85percent.pth
+ZiyangNetV2_83PercentAccurate.pth
+ZiyangNetV3_82PercentAccurate.pth
